@@ -23,7 +23,7 @@ function App() {
         </div>
 
         {/* 第二栏：客户列表 */}
-        <div className="h-full border-r border-gray-200">
+        <div className="h-full border-r border-gray-200 bg-[#EDEFF0]">
           <CustomerList
             customers={customers}
             selectedCustomerId={selectedCustomer?.id || null}

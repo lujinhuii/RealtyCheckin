@@ -19,7 +19,11 @@ const ageRanges = [
 ]
 
 // 默认顾问
-const defaultConsultant = { id: '1', name: '孔忆', avatar: 'https://ui-avatars.com/api/?name=孔忆&background=random&size=128' }
+const defaultConsultant = {
+  id: '1',
+  name: '孔忆',
+  avatar: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=256&q=80&auto=format&fit=crop'
+}
 
 export function CustomerDetail({ customer }: CustomerDetailProps) {
   const { toast } = useToast()

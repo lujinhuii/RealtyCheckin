@@ -31,6 +31,27 @@ const consultants = [
   { id: '4', name: '张华' },
 ];
 
+// 随机头像图片（风景、猫狗、人物背影等）
+const avatarImages: string[] = [
+  // 风景
+  'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=256&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=256&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=256&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=256&q=80&auto=format&fit=crop',
+  // 猫狗
+  'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=256&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=256&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1558944351-c37f3c5b4a2d?w=256&q=80&auto=format&fit=crop',
+  // 人物背影/抽象
+  'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=256&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=256&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&q=80&auto=format&fit=crop'
+];
+
+function pickRandomAvatar(): string {
+  return avatarImages[Math.floor(Math.random() * avatarImages.length)];
+}
+
 // 生成随机手机号
 function generatePhone(): string {
   const prefixes = ['130', '131', '132', '133', '134', '135', '136', '137', '138', '139', '150', '151', '152', '153', '155', '156', '157', '158', '159', '180', '181', '182', '183', '184', '185', '186', '187', '188', '189'];
@@ -71,8 +92,8 @@ function generateCustomer(): Customer {
   const phone = generatePhone();
   const id = Math.random().toString(36).substring(2, 15);
   
-  // 使用 UI Avatars API 生成头像
-  const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&size=128`;
+  // 使用真实图片作为头像（风景/猫狗/人物背影）
+  const avatar = pickRandomAvatar();
   
   // 随机生成状态
   const status = checkInStatuses[Math.floor(Math.random() * checkInStatuses.length)];
@@ -93,7 +114,7 @@ function generateCustomer(): Customer {
   const hasRecommender = Math.random() < 0.3;
   const recommender = hasRecommender ? {
     name: firstNames[Math.floor(Math.random() * firstNames.length)] + lastNames[Math.floor(Math.random() * lastNames.length)],
-    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(firstNames[Math.floor(Math.random() * firstNames.length)] + lastNames[Math.floor(Math.random() * lastNames.length)])}&background=random&size=128`,
+    avatar: pickRandomAvatar(),
     identity: recommenderIdentities[Math.floor(Math.random() * recommenderIdentities.length)],
     recommendTime: generateRecommendTime(),
     isValid: Math.random() > 0.2, // 80%有效

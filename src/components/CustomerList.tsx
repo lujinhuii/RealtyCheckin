@@ -42,7 +42,7 @@ export function CustomerList({ customers, selectedCustomerId, onSelectCustomer }
   const newCustomersCount = 2 // 模拟新客户数量
 
   return (
-    <div className="h-full flex flex-col bg-white overflow-hidden">
+    <div className="h-full flex flex-col bg-transparent overflow-hidden">
       {/* 固定顶部区域 */}
       <div className="flex-shrink-0">
         {/* 标签页 */}

@@ -8,17 +8,17 @@ export default {
     extend: {
       keyframes: {
         "slide-in-from-right-full": {
-          "0%": { transform: "translateX(100%)" },
-          "100%": { transform: "translateX(0)" },
+          "0%": { transform: "translateX(100%)", opacity: "0" },
+          "100%": { transform: "translateX(0)", opacity: "1" },
         },
         "slide-out-to-right-full": {
-          "0%": { transform: "translateX(0)" },
-          "100%": { transform: "translateX(100%)" },
+          "0%": { transform: "translateX(0)", opacity: "1" },
+          "100%": { transform: "translateX(100%)", opacity: "0" },
         },
       },
       animation: {
-        "slide-in-from-right-full": "slide-in-from-right-full 0.3s ease-in-out",
-        "slide-out-to-right-full": "slide-out-to-right-full 0.3s ease-in-out",
+        "slide-in-from-right-full": "slide-in-from-right-full 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+        "slide-out-to-right-full": "slide-out-to-right-full 0.35s cubic-bezier(0.4, 0, 1, 1)",
       },
       colors: {
         background: "hsl(var(--background))",
