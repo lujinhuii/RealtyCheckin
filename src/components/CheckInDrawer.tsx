@@ -76,7 +76,7 @@ export function CheckInDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="w-full sm:w-[500px] flex flex-col">
+      <DrawerContent className="w-full sm:w-[840px] md:w-[960px] flex flex-col">
         <DrawerCloseButton />
         <DrawerHeader>
           <DrawerTitle>
@@ -84,9 +84,9 @@ export function CheckInDrawer({
           </DrawerTitle>
         </DrawerHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-6 min-h-0">
-          {/* 点饮品部分 */}
-          <div className="space-y-4">
+        <div className="flex-1 px-6 pb-6 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-0 lg:divide-x lg:divide-gray-200">
+          {/* 左列：点饮品 */}
+          <div className="space-y-4 min-h-0 overflow-auto lg:pr-6">
             <div className="text-base font-semibold text-gray-900 pb-2 border-b border-gray-200">
               选择饮品
             </div>
@@ -149,8 +149,8 @@ export function CheckInDrawer({
             )}
           </div>
 
-          {/* 选择座位部分 */}
-          <div className="space-y-4">
+          {/* 右列：选择座位 */}
+          <div className="space-y-4 min-h-0 overflow-auto lg:pl-6">
             <div className="text-base font-semibold text-gray-900 pb-2 border-b border-gray-200">
               选择座位
             </div>
