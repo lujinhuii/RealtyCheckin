@@ -27,7 +27,7 @@ function App() {
     return { left: 40, mid: 30, right: 30 }
   })
   const [isDragging, setIsDragging] = useState<false | 'left-mid' | 'mid-right'>(false)
-  const [containerWidth, setContainerWidth] = useState<number>(0)
+  
 
   // simple media query hook (desktop >= 1024px)
   const [isDesktop, setIsDesktop] = useState<boolean>(() => typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : true)
@@ -65,7 +65,7 @@ function App() {
     const container = document.getElementById('three-column-container')
     if (!container) return
     const rect = container.getBoundingClientRect()
-    setContainerWidth(rect.width)
+    
 
     const minLeft = 240 // px
     const minMid = 320 // px
@@ -76,7 +76,7 @@ function App() {
       // current px widths based on current percentages
       const leftPx = (widths.left / 100) * rect.width
       const midPx = (widths.mid / 100) * rect.width
-      const rightPx = (widths.right / 100) * rect.width
+      
 
       if (isDragging === 'left-mid') {
         const newLeftPx = Math.max(minLeft, Math.min(x, rect.width - (minMid + minRight)))
