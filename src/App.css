@@ -1,1 +1,21 @@
 /* App specific styles */
+.resizer-x {
+  width: 6px;
+  cursor: col-resize;
+  background: rgba(237, 239, 240, 1);
+  position: relative;
+}
+.resizer-x::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 2px;   
+  height: 100%;
+  background: rgba(237, 239, 240, 1);
+  border-radius: 1px;
+}
+.resizer-x:hover::after {
+  background: rgba(37, 99, 235, 0.35); /* blue-600 with opacity */
+}
