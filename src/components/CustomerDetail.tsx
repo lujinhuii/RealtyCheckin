@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from "react"
-import type { Customer, CustomerFormData, Drink, Seat } from "../types"
+import type { Customer, CustomerFormData, DrinkOrderItem, Seat } from "../types"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { Input } from "./ui/input"
 import { Button } from "./ui/button"
@@ -53,10 +53,17 @@ export function CustomerDetail({ customer }: CustomerDetailProps) {
     // 表单提交由"确认签到"按钮处理，这里只是阻止默认提交行为
   }
 
-  const handleCheckInComplete = (drinks: Drink[], seat: Seat | null) => {
+  const handleCheckInComplete = (orders: DrinkOrderItem[], seat: Seat | null) => {
     // 模拟保存客户信息和选择的饮品、座位
     setTimeout(() => {
-      const drinkText = drinks.length > 0 ? `，已选择饮品：${drinks.map((d) => d.name).join("、")}` : ""
+      let drinkText = ""
+      if (orders.length > 0) {
+        const drinkDetails = orders.map((order) => {
+          const details = `${order.drink.name}(${order.temperature}/${order.sweetness})`
+          return order.quantity > 1 ? `${details} × ${order.quantity}` : details
+        })
+        drinkText = `，已选择饮品：${drinkDetails.join("、")}`
+      }
       const seatText = seat ? `，已选择座位：${seat.name}` : ""
       toast({
         title: "签到成功",

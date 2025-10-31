@@ -21,11 +21,23 @@ export type CheckInStatus =
 
 export type Gender = 'male' | 'female' | '';
 
+export type Temperature = '常温' | '热饮' | '标准冰' | '少冰' | '去冰';
+
+export type Sweetness = '无糖' | '少糖' | '标准糖';
+
 export interface Drink {
   id: string;
   name: string;
   icon?: string; // 图标或 emoji
   price?: number; // 价格（可选）
+}
+
+export interface DrinkOrderItem {
+  id: string; // 唯一标识（用于编辑/删除）
+  drink: Drink; // 饮品信息
+  temperature: Temperature; // 温度
+  sweetness: Sweetness; // 甜度
+  quantity: number; // 数量
 }
 
 export interface Seat {
