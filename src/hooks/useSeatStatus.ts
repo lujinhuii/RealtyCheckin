@@ -6,7 +6,7 @@ const generateSeats = (): Seat[] => {
   const seats: Seat[] = []
   const areas = ['A区', 'B区', 'C区']
   
-  areas.forEach((area, areaIndex) => {
+  areas.forEach((area) => {
     for (let i = 1; i <= 12; i++) {
       seats.push({
         id: `${area}-${String(i).padStart(2, '0')}`,
