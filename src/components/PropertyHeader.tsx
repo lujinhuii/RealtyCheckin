@@ -30,7 +30,7 @@ export function PropertyHeader() {
         <div className="relative mb-4">
           <div className="relative w-64 h-64 bg-white  rounded-lg flex items-center justify-center p-4 shadow-sm">
             <img 
-              src="/qrcode.png" 
+              src={`${import.meta.env.BASE_URL}qrcode.png`}
               alt="签到二维码" 
               className="w-full h-full object-contain rounded-lg"
               onError={(e) => {
