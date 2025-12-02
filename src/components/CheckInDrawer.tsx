@@ -147,6 +147,7 @@ export function CheckInDrawer({
   const [orderIdToDelete, setOrderIdToDelete] = useState<string | null>(null) // 待删除的订单ID
   const [inlineOrderPanelOpen, setInlineOrderPanelOpen] = useState(false) // 内联点单面板状态
   const [editingExternalOrderId, setEditingExternalOrderId] = useState<string | null>(null) // 正在编辑的外部订单ID
+  const [initialExternalOrderIds, setInitialExternalOrderIds] = useState<Set<string>>(new Set()) // 初始外部订单ID集合
 
   // 计算签到模式
   const mode: CheckInMode = customer?.checkInMode ?? 'orderAndSeat'
@@ -154,7 +155,7 @@ export function CheckInDrawer({
   // 根据模式计算控制标志
   const allowOrderSelection = mode === 'orderAndSeat' || mode === 'orderOnly'
   const allowSeatSelection = mode === 'seatOnly' || mode === 'orderAndSeat' || mode === 'externalOrdersSeat' || mode === 'externalOrdersSeatAndOrder'
-  const requireSeatToConfirm = false // 座位选择改为非必填，不选择座位也可以完成签到
+  // 座位选择改为非必填，不选择座位也可以完成签到（保留说明注释，去掉未使用变量）
   const isExternalOrderMode = mode === 'externalOrdersNoSeat' || mode === 'externalOrdersSeat' || mode === 'externalOrdersSeatAndOrder'
 
   // 打开抽屉时初始化订单和座位
@@ -169,10 +170,13 @@ export function CheckInDrawer({
     setSelectedCategory(DRINK_CATEGORIES[0]) // 重置为第一个分类
     if (isExternalOrderMode) {
       // 外部订单模式：使用客户的外部订单
+      const initialIds = new Set((customer?.externalOrders ?? []).map(o => o.id))
+      setInitialExternalOrderIds(initialIds)
       setExternalOrders(customer?.externalOrders ? [...customer.externalOrders] : [])
       setSelectedOrders([])
     } else {
       // 其他模式：清空订单
+      setInitialExternalOrderIds(new Set())
       setSelectedOrders([])
       setExternalOrders([])
     }
@@ -440,8 +444,19 @@ export function CheckInDrawer({
                   {/* 外部订单列表 */}
                   {externalOrders.length > 0 ? (
                     <div className="space-y-4">
-                      {externalOrders.map((order) => {
+                      {externalOrders
+                        .slice()
+                        .sort((a, b) => {
+                          const aIsInitial = initialExternalOrderIds.has(a.id)
+                          const bIsInitial = initialExternalOrderIds.has(b.id)
+                          // 新增订单（非初始）排在前面，初始订单排在后面
+                          if (aIsInitial && !bIsInitial) return 1
+                          if (!aIsInitial && bIsInitial) return -1
+                          return 0
+                        })
+                        .map((order) => {
                         const orderTotalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0)
+                        const isInitial = initialExternalOrderIds.has(order.id)
                         return (
                           <Card
                             key={order.id}
@@ -455,18 +470,20 @@ export function CheckInDrawer({
                                 )}
                               </div>
                               <div className="flex items-center gap-3">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setEditingExternalOrderId(order.id)
-                                    setSelectedOrders(order.items.map(i => ({ ...i, drink: getDrinkWithImage(i.drink) })))
-                                    setCartDialogOpen(true)
-                                    setInlineOrderPanelOpen(false)
-                                  }}
-                                  className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
-                                >
-                                  编辑订单
-                                </button>
+                                {!isInitial && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingExternalOrderId(order.id)
+                                      setSelectedOrders(order.items.map(i => ({ ...i, drink: getDrinkWithImage(i.drink) })))
+                                      setCartDialogOpen(true)
+                                      setInlineOrderPanelOpen(false)
+                                    }}
+                                    className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                                  >
+                                    编辑订单
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteOrder(order.id)}
