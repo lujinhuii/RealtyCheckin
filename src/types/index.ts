@@ -29,7 +29,9 @@ export type CheckInMode =
   | 'seatOnly' 
   | 'orderAndSeat' 
   | 'externalOrdersNoSeat' 
-  | 'externalOrdersSeat';
+  | 'externalOrdersSeat'
+  | 'orderOnly'
+  | 'externalOrdersSeatAndOrder';
 
 export interface Drink {
   id: string;

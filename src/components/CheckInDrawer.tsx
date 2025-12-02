@@ -13,7 +13,7 @@ import { Card, CardContent } from "./ui/card"
 import { useSeatStatus } from "../hooks/useSeatStatus"
 import { cn } from "../lib/utils"
 import { DrinkSelectionDialog } from "./DrinkSelectionDialog"
-import { ShoppingBag, Plus, Minus, Trash2, Armchair } from "lucide-react"
+import { ShoppingBag, Plus, Minus, Trash2, Armchair, X } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -145,19 +145,26 @@ export function CheckInDrawer({
   const [selectedCategory, setSelectedCategory] = useState<string>(DRINK_CATEGORIES[0]) // 当前选中的分类
   const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false) // 确认删除对话框状态
   const [orderIdToDelete, setOrderIdToDelete] = useState<string | null>(null) // 待删除的订单ID
+  const [inlineOrderPanelOpen, setInlineOrderPanelOpen] = useState(false) // 内联点单面板状态
+  const [editingExternalOrderId, setEditingExternalOrderId] = useState<string | null>(null) // 正在编辑的外部订单ID
 
   // 计算签到模式
   const mode: CheckInMode = customer?.checkInMode ?? 'orderAndSeat'
   
   // 根据模式计算控制标志
-  const allowOrderSelection = mode === 'orderAndSeat'
-  const allowSeatSelection = mode !== 'externalOrdersNoSeat'
-  const requireSeatToConfirm = mode === 'seatOnly' || mode === 'orderAndSeat' || mode === 'externalOrdersSeat'
-  const isExternalOrderMode = mode === 'externalOrdersNoSeat' || mode === 'externalOrdersSeat'
+  const allowOrderSelection = mode === 'orderAndSeat' || mode === 'orderOnly'
+  const allowSeatSelection = mode === 'seatOnly' || mode === 'orderAndSeat' || mode === 'externalOrdersSeat' || mode === 'externalOrdersSeatAndOrder'
+  const requireSeatToConfirm = false // 座位选择改为非必填，不选择座位也可以完成签到
+  const isExternalOrderMode = mode === 'externalOrdersNoSeat' || mode === 'externalOrdersSeat' || mode === 'externalOrdersSeatAndOrder'
 
   // 打开抽屉时初始化订单和座位
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      // 关闭抽屉时也关闭内联点单面板
+      setInlineOrderPanelOpen(false)
+      setEditingExternalOrderId(null)
+      return
+    }
     setSelectedSeat(null)
     setSelectedCategory(DRINK_CATEGORIES[0]) // 重置为第一个分类
     if (isExternalOrderMode) {
@@ -175,15 +182,19 @@ export function CheckInDrawer({
     if (selectedSeat) {
       occupySeat(selectedSeat.id)
     }
-    // 如果是外部订单模式，将所有订单的 items 展平
+    // 如果是外部订单模式，合并外部订单和新添加的订单
     const ordersToComplete = isExternalOrderMode
-      ? externalOrders.flatMap(order => order.items)
+      ? [
+          ...externalOrders.flatMap(order => order.items),
+          ...selectedOrders,
+        ]
       : selectedOrders
     onComplete(ordersToComplete, selectedSeat)
     // 重置选择
     setSelectedOrders([])
     setExternalOrders([])
     setSelectedSeat(null)
+    setInlineOrderPanelOpen(false)
   }
 
   const handleCancel = () => {
@@ -258,6 +269,35 @@ export function CheckInDrawer({
     setConfirmDeleteDialogOpen(false)
   }
 
+  const handleSaveInlineOrder = () => {
+    if (selectedOrders.length === 0) return
+    if (editingExternalOrderId) {
+      // 编辑模式：更新现有订单
+      setExternalOrders((prev) => prev.map(o => o.id === editingExternalOrderId ? { ...o, items: selectedOrders.map(i => ({ ...i })) } : o))
+    } else {
+      // 新增模式：创建新订单
+      const newExternalOrder: ExternalOrder = {
+        id: `${Date.now()}-${Math.random()}`,
+        items: selectedOrders.map(i => ({ ...i })),
+        orderTime: new Date().toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      }
+      setExternalOrders((prev) => [...prev, newExternalOrder])
+    }
+    setSelectedOrders([])
+    setEditingExternalOrderId(null)
+    setInlineOrderPanelOpen(false)
+  }
+
+  const handleCartConfirm = () => {
+    if (editingExternalOrderId) {
+      // 编辑外部订单模式：保存修改到外部订单
+      setExternalOrders((prev) => prev.map(o => o.id === editingExternalOrderId ? { ...o, items: selectedOrders.map(i => ({ ...i })) } : o))
+      setEditingExternalOrderId(null)
+    }
+    // 关闭购物袋弹窗
+    setCartDialogOpen(false)
+  }
+
   // 计算当前分类下的饮品列表
   const drinksInCategory = DRINKS.filter(drink => drink.category === selectedCategory)
 
@@ -301,7 +341,10 @@ export function CheckInDrawer({
                         <button
                           key={category}
                           type="button"
-                          onClick={() => setSelectedCategory(category)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedCategory(category)
+                          }}
                           className={cn(
                             "w-full px-3 py-2.5 text-sm font-medium rounded-lg transition-all text-left relative group",
                             selectedCategory === category
@@ -325,7 +368,10 @@ export function CheckInDrawer({
                       {drinksInCategory.map((drink) => (
                         <div
                           key={drink.id}
-                          onClick={() => handleDrinkClick(drink)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDrinkClick(drink)
+                          }}
                           className="group cursor-pointer relative bg-white rounded-xl border border-gray-100 p-3 shadow-sm hover:shadow-md transition-all hover:border-blue-100"
                         >
                           <div className="flex gap-4">
@@ -372,8 +418,23 @@ export function CheckInDrawer({
               ) : (
                 // 外部订单模式：显示外部订单列表
                 <div className="flex-1 overflow-y-auto p-6">
-                  <div className="text-lg font-semibold text-gray-900 mb-4">
-                    外部订单
+                  <div className="flex items-center justify-between mb-4">
+                  <div className="text-lg font-semibold text-gray-900">
+                      订单
+                    </div>
+                    {mode === 'externalOrdersSeatAndOrder' && (
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          setEditingExternalOrderId(null)
+                          setSelectedOrders([])
+                          setInlineOrderPanelOpen(true)
+                        }}
+                        className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium"
+                      >
+                        点单
+                      </Button>
+                    )}
                   </div>
                   
                   {/* 外部订单列表 */}
@@ -393,13 +454,27 @@ export function CheckInDrawer({
                                   <span className="text-xs text-gray-400">{order.orderTime}</span>
                                 )}
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteOrder(order.id)}
-                                className="text-xs text-red-600 hover:text-red-700 hover:underline"
-                              >
-                                作废订单
-                              </button>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingExternalOrderId(order.id)
+                                    setSelectedOrders(order.items.map(i => ({ ...i, drink: getDrinkWithImage(i.drink) })))
+                                    setCartDialogOpen(true)
+                                    setInlineOrderPanelOpen(false)
+                                  }}
+                                  className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                                >
+                                  编辑订单
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteOrder(order.id)}
+                                  className="text-xs text-red-600 hover:text-red-700 hover:underline"
+                                >
+                                  作废订单
+                                </button>
+                              </div>
                             </div>
                             <CardContent className="p-4">
                               <div className="space-y-4">
@@ -451,7 +526,7 @@ export function CheckInDrawer({
                   ) : (
                      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
                        <ShoppingBag className="w-12 h-12 mb-3 opacity-20" />
-                       <p>暂无外部订单</p>
+                       <p>暂无订单</p>
                      </div>
                   )}
                 </div>
@@ -580,13 +655,7 @@ export function CheckInDrawer({
                 </Button>
                 <Button
                   onClick={handleComplete}
-                  disabled={requireSeatToConfirm && !selectedSeat}
-                  className={cn(
-                    "h-10 px-8 font-medium shadow-md transition-all",
-                    requireSeatToConfirm && !selectedSeat
-                      ? "bg-gray-200 text-gray-400"
-                      : "bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5"
-                  )}
+                  className="h-10 px-8 font-medium shadow-md transition-all bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5"
                 >
                   确认签到
                 </Button>
@@ -620,7 +689,12 @@ export function CheckInDrawer({
       />
 
       {/* 购物袋弹窗 */}
-      <Dialog open={cartDialogOpen} onOpenChange={setCartDialogOpen}>
+      <Dialog open={cartDialogOpen} onOpenChange={(open) => {
+        setCartDialogOpen(open)
+        if (!open) {
+          setEditingExternalOrderId(null)
+        }
+      }}>
         <DialogContent className="max-w-lg max-h-[80vh] flex flex-col overflow-hidden p-0 gap-0 rounded-2xl">
           <DialogHeader className="px-6 py-4 border-b border-gray-100 bg-white z-10">
             <DialogTitle className="flex items-center gap-2">
@@ -740,7 +814,7 @@ export function CheckInDrawer({
                   </span>
                 </div>
               </div>
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all" onClick={() => setCartDialogOpen(false)}>
+              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all" onClick={handleCartConfirm}>
                 确认
               </Button>
             </div>
@@ -777,6 +851,163 @@ export function CheckInDrawer({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 内联点单面板 - 仅在 externalOrdersSeatAndOrder 模式显示 */}
+      {mode === 'externalOrdersSeatAndOrder' && inlineOrderPanelOpen && (
+        <div className="fixed inset-0 z-[100]">
+          {/* 遮罩层 */}
+          <div 
+            className="absolute inset-0 bg-black/20 backdrop-blur-sm z-0"
+            onClick={() => {
+              setInlineOrderPanelOpen(false)
+              setEditingExternalOrderId(null)
+            }}
+          />
+          
+          {/* 右侧点单面板 */}
+          <div 
+            className="absolute right-0 top-0 bottom-0 w-full sm:w-[560px] md:w-[720px] lg:w-[860px] bg-white shadow-2xl flex flex-col h-full pointer-events-auto z-10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 面板头部 */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
+              <h3 className="text-lg font-semibold text-gray-900">选择饮品</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setInlineOrderPanelOpen(false)
+                  setEditingExternalOrderId(null)
+                }}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* 面板内容 */}
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+              <div className="flex-1 min-h-0 overflow-hidden flex">
+                {/* 左侧分类导航栏 */}
+                <div className="w-32 flex-shrink-0 border-r border-gray-100 bg-gray-50/50 p-3 overflow-y-auto">
+                  <div className="space-y-1">
+                    {DRINK_CATEGORIES.map((category) => (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedCategory(category)
+                        }}
+                        className={cn(
+                          "w-full px-3 py-2.5 text-sm font-medium rounded-lg transition-all text-left relative group",
+                          selectedCategory === category
+                            ? "bg-white text-blue-600 shadow-sm ring-1 ring-gray-200"
+                            : "text-gray-600 hover:bg-gray-200/50 hover:text-gray-900"
+                        )}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 右侧饮品列表 */}
+                <div className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6 bg-white">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">{selectedCategory}</h3>
+                    <p className="text-sm text-gray-500 mt-1">请选择客户需要的饮品</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {drinksInCategory.map((drink) => (
+                      <div
+                        key={drink.id}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDrinkClick(drink)
+                        }}
+                        className="group cursor-pointer relative bg-white rounded-xl border border-gray-100 p-3 shadow-sm hover:shadow-md transition-all hover:border-blue-100"
+                      >
+                        <div className="flex gap-4">
+                          {/* 饮品图片 */}
+                          <div className="flex-shrink-0">
+                            {drink.image ? (
+                              <img
+                                src={drink.image}
+                                alt={drink.name}
+                                className="w-24 h-24 object-cover rounded-lg bg-gray-100"
+                              />
+                            ) : (
+                              <div className="w-24 h-24 flex items-center justify-center bg-blue-50 rounded-lg text-3xl text-blue-500">
+                                {drink.icon || "☕"}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* 饮品信息 */}
+                          <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                            <div>
+                              <div className="flex items-start justify-between gap-2">
+                                <h4 className="text-base font-bold text-gray-900 line-clamp-1" title={drink.name}>
+                                  {drink.name}
+                                </h4>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-base font-bold text-blue-600">
+                                ¥{drink.price}
+                              </span>
+                              <div className="w-8 h-8 rounded-full bg-gray-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                <Plus className="w-5 h-5" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 底部操作栏 */}
+              <div className="mt-auto border-t border-gray-100 bg-white p-4 flex items-center justify-between flex-shrink-0">
+                {/* 左侧：购物袋按钮（与 DrawerFooter 中的样式一致） */}
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => selectedOrders.length > 0 && setCartDialogOpen(true)}
+                    disabled={selectedOrders.length === 0}
+                    className={cn(
+                      "relative flex items-center gap-2.5 px-4 h-10 rounded-full transition-all",
+                      selectedOrders.length > 0
+                        ? "bg-gray-900 text-white shadow-md hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5"
+                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    )}
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    <span className="text-sm font-medium">购物袋</span>
+                    {selectedOrders.length > 0 && (
+                      <span className="bg-white text-gray-900 min-w-[20px] h-5 flex items-center justify-center rounded-full text-xs font-bold px-1">
+                        {selectedOrders.reduce((sum, order) => sum + order.quantity, 0)}
+                      </span>
+                    )}
+                  </button>
+                </div>
+                {/* 右侧：保存为订单按钮 */}
+                <div className="flex items-center gap-2">
+                  <Button 
+                    className="bg-blue-600 hover:bg-blue-700 text-white" 
+                    disabled={selectedOrders.length === 0} 
+                    onClick={handleSaveInlineOrder}
+                  >
+                    保存为订单
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 

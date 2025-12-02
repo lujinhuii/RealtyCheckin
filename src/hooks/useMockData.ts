@@ -211,25 +211,40 @@ export function useMockData(count: number = 15): Customer[] {
   useEffect(() => {
     const generatedCustomers = Array.from({ length: count }, () => generateCustomer());
     
-    // 为前4个客户设置演示模式
-    if (generatedCustomers.length >= 4) {
+    // 为前6个客户设置演示模式
+    if (generatedCustomers.length >= 6) {
       // 第1个客户：仅分配座位
       generatedCustomers[0].checkInMode = 'seatOnly' as CheckInMode;
       generatedCustomers[0].name = '仅分配座位';
+      generatedCustomers[0].isProcessed = false;
       
-      // 第2个客户：点单 + 分配座位（默认，无需设置）
-      generatedCustomers[1].checkInMode = 'orderAndSeat' as CheckInMode;
-      generatedCustomers[1].name = '点单+座位';
+      // 第2个客户：仅点单（无座位）
+      generatedCustomers[1].checkInMode = 'orderOnly' as CheckInMode;
+      generatedCustomers[1].name = '仅点单';
+      generatedCustomers[1].isProcessed = false;
       
-      // 第3个客户：外部点单，仅可删除，不可修改，不支持分配座位
-      generatedCustomers[2].checkInMode = 'externalOrdersNoSeat' as CheckInMode;
-      generatedCustomers[2].externalOrders = createSampleExternalOrders();
-      generatedCustomers[2].name = '外部订单无座位';
+      // 第3个客户：点单 + 分配座位（默认，无需设置）
+      generatedCustomers[2].checkInMode = 'orderAndSeat' as CheckInMode;
+      generatedCustomers[2].name = '点单+座位';
+      generatedCustomers[2].isProcessed = false;
       
-      // 第4个客户：外部点单，仅可删除，不可修改，支持分配座位
-      generatedCustomers[3].checkInMode = 'externalOrdersSeat' as CheckInMode;
+      // 第4个客户：预订单（外部点单），仅可删除，不可修改，不支持分配座位
+      generatedCustomers[3].checkInMode = 'externalOrdersNoSeat' as CheckInMode;
       generatedCustomers[3].externalOrders = createSampleExternalOrders();
-      generatedCustomers[3].name = '外部订单+座位';
+      generatedCustomers[3].name = '预订单无座位';
+      generatedCustomers[3].isProcessed = false;
+      
+      // 第5个客户：预订单（外部点单），仅可删除，不可修改，支持分配座位
+      generatedCustomers[4].checkInMode = 'externalOrdersSeat' as CheckInMode;
+      generatedCustomers[4].externalOrders = createSampleExternalOrders();
+      generatedCustomers[4].name = '预订单+座位';
+      generatedCustomers[4].isProcessed = false;
+      
+      // 第6个客户：预订单（外部点单）+ 座位 + 可新增点单
+      generatedCustomers[5].checkInMode = 'externalOrdersSeatAndOrder' as CheckInMode;
+      generatedCustomers[5].externalOrders = createSampleExternalOrders();
+      generatedCustomers[5].name = '预订单+座位+点单';
+      generatedCustomers[5].isProcessed = false;
     }
     
     setCustomers(generatedCustomers);

@@ -29,25 +29,39 @@ DrawerOverlay.displayName = DialogPrimitive.Overlay.displayName
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DrawerPortal>
-    <DrawerOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed z-50 h-full border-l bg-white shadow-lg",
-        "right-0 top-0 w-full",
-        "data-[state=open]:animate-in data-[state=closed]:animate-out",
-        "data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-right-full",
-        "focus:outline-none",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </DialogPrimitive.Content>
-  </DrawerPortal>
-))
+>(({ className, children, onInteractOutside, onPointerDownOutside, ...props }, ref) => {
+  return (
+    <DrawerPortal>
+      <DrawerOverlay />
+      <DialogPrimitive.Content
+        ref={ref}
+        className={cn(
+          "fixed z-50 h-full border-l bg-white shadow-lg",
+          "right-0 top-0 w-full",
+          "data-[state=open]:animate-in data-[state=closed]:animate-out",
+          "data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-right-full",
+          "focus:outline-none",
+          className
+        )}
+        // Completely disable auto-close on outside click/interaction
+        // Drawer can only be closed via explicit close button or cancel button
+        onInteractOutside={(e) => {
+          e.preventDefault()
+          // Still allow custom handlers if provided, but prevent default close behavior
+          onInteractOutside?.(e)
+        }}
+        onPointerDownOutside={(e) => {
+          e.preventDefault()
+          // Still allow custom handlers if provided, but prevent default close behavior
+          onPointerDownOutside?.(e)
+        }}
+        {...props}
+      >
+        {children}
+      </DialogPrimitive.Content>
+    </DrawerPortal>
+  )
+})
 DrawerContent.displayName = DialogPrimitive.Content.displayName
 
 const DrawerHeader = ({
