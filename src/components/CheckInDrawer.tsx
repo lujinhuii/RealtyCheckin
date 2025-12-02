@@ -139,14 +139,12 @@ export function CheckInDrawer({
   const [externalOrders, setExternalOrders] = useState<ExternalOrder[]>([]) // 用于外部订单模式
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null)
   const [selectedDrinkForDialog, setSelectedDrinkForDialog] = useState<Drink | null>(null)
-  const [editingOrderId, setEditingOrderId] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [cartDialogOpen, setCartDialogOpen] = useState(false) // 购物袋弹窗状态
   const [selectedCategory, setSelectedCategory] = useState<string>(DRINK_CATEGORIES[0]) // 当前选中的分类
   const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false) // 确认删除对话框状态
   const [orderIdToDelete, setOrderIdToDelete] = useState<string | null>(null) // 待删除的订单ID
   const [inlineOrderPanelOpen, setInlineOrderPanelOpen] = useState(false) // 内联点单面板状态
-  const [editingExternalOrderId, setEditingExternalOrderId] = useState<string | null>(null) // 正在编辑的外部订单ID
   const [initialExternalOrderIds, setInitialExternalOrderIds] = useState<Set<string>>(new Set()) // 初始外部订单ID集合
 
   // 计算签到模式
@@ -163,7 +161,6 @@ export function CheckInDrawer({
     if (!open) {
       // 关闭抽屉时也关闭内联点单面板
       setInlineOrderPanelOpen(false)
-      setEditingExternalOrderId(null)
       return
     }
     setSelectedSeat(null)
@@ -210,7 +207,6 @@ export function CheckInDrawer({
 
   const handleDrinkClick = (drink: Drink) => {
     setSelectedDrinkForDialog(drink)
-    setEditingOrderId(null)
     setDialogOpen(true)
   }
 
@@ -219,37 +215,24 @@ export function CheckInDrawer({
     if (!open) {
       // 对话框关闭时清理状态
       setSelectedDrinkForDialog(null)
-      setEditingOrderId(null)
     }
   }
 
   const handleDialogConfirm = (temperature: Temperature, sweetness: Sweetness, quantity: number) => {
     if (!selectedDrinkForDialog) return
 
-    if (editingOrderId) {
-      // 编辑模式：更新现有订单
-      setSelectedOrders((prev) =>
-        prev.map((order) =>
-          order.id === editingOrderId
-            ? { ...order, temperature, sweetness, quantity }
-            : order
-        )
-      )
-    } else {
-      // 新增模式：创建新订单
-      const newOrder: DrinkOrderItem = {
-        id: `${Date.now()}-${Math.random()}`,
-        drink: selectedDrinkForDialog,
-        temperature,
-        sweetness,
-        quantity,
-      }
-      setSelectedOrders((prev) => [...prev, newOrder])
+    // 仅支持新增订单，不支持编辑
+    const newOrder: DrinkOrderItem = {
+      id: `${Date.now()}-${Math.random()}`,
+      drink: selectedDrinkForDialog,
+      temperature,
+      sweetness,
+      quantity,
     }
+    setSelectedOrders((prev) => [...prev, newOrder])
     // 确认后关闭对话框并清理状态，允许继续添加其他饮品
     setDialogOpen(false)
     setSelectedDrinkForDialog(null)
-    setEditingOrderId(null)
   }
 
   const handleDeleteOrder = (orderId: string) => {
@@ -275,29 +258,18 @@ export function CheckInDrawer({
 
   const handleSaveInlineOrder = () => {
     if (selectedOrders.length === 0) return
-    if (editingExternalOrderId) {
-      // 编辑模式：更新现有订单
-      setExternalOrders((prev) => prev.map(o => o.id === editingExternalOrderId ? { ...o, items: selectedOrders.map(i => ({ ...i })) } : o))
-    } else {
-      // 新增模式：创建新订单
-      const newExternalOrder: ExternalOrder = {
-        id: `${Date.now()}-${Math.random()}`,
-        items: selectedOrders.map(i => ({ ...i })),
-        orderTime: new Date().toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-      }
-      setExternalOrders((prev) => [...prev, newExternalOrder])
+    // 仅支持新增订单，不支持编辑
+    const newExternalOrder: ExternalOrder = {
+      id: `${Date.now()}-${Math.random()}`,
+      items: selectedOrders.map(i => ({ ...i })),
+      orderTime: new Date().toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
     }
+    setExternalOrders((prev) => [...prev, newExternalOrder])
     setSelectedOrders([])
-    setEditingExternalOrderId(null)
     setInlineOrderPanelOpen(false)
   }
 
   const handleCartConfirm = () => {
-    if (editingExternalOrderId) {
-      // 编辑外部订单模式：保存修改到外部订单
-      setExternalOrders((prev) => prev.map(o => o.id === editingExternalOrderId ? { ...o, items: selectedOrders.map(i => ({ ...i })) } : o))
-      setEditingExternalOrderId(null)
-    }
     // 关闭购物袋弹窗
     setCartDialogOpen(false)
   }
@@ -430,7 +402,6 @@ export function CheckInDrawer({
                       <Button
                         type="button"
                         onClick={() => {
-                          setEditingExternalOrderId(null)
                           setSelectedOrders([])
                           setInlineOrderPanelOpen(true)
                         }}
@@ -456,7 +427,7 @@ export function CheckInDrawer({
                         })
                         .map((order) => {
                         const orderTotalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0)
-                        const isInitial = initialExternalOrderIds.has(order.id)
+                        // 通过 initialExternalOrderIds 排序后，这里不再需要单独标记 isInitial
                         return (
                           <Card
                             key={order.id}
@@ -470,20 +441,6 @@ export function CheckInDrawer({
                                 )}
                               </div>
                               <div className="flex items-center gap-3">
-                                {!isInitial && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setEditingExternalOrderId(order.id)
-                                      setSelectedOrders(order.items.map(i => ({ ...i, drink: getDrinkWithImage(i.drink) })))
-                                      setCartDialogOpen(true)
-                                      setInlineOrderPanelOpen(false)
-                                    }}
-                                    className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
-                                  >
-                                    编辑订单
-                                  </button>
-                                )}
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteOrder(order.id)}
@@ -688,30 +645,13 @@ export function CheckInDrawer({
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         onConfirm={handleDialogConfirm}
-        initialTemperature={
-          editingOrderId
-            ? selectedOrders.find((o) => o.id === editingOrderId)?.temperature || '标准冰'
-            : '标准冰'
-        }
-        initialSweetness={
-          editingOrderId
-            ? selectedOrders.find((o) => o.id === editingOrderId)?.sweetness || '标准糖'
-            : '标准糖'
-        }
-        initialQuantity={
-          editingOrderId
-            ? selectedOrders.find((o) => o.id === editingOrderId)?.quantity || 1
-            : 1
-        }
+        initialTemperature="标准冰"
+        initialSweetness="标准糖"
+        initialQuantity={1}
       />
 
       {/* 购物袋弹窗 */}
-      <Dialog open={cartDialogOpen} onOpenChange={(open) => {
-        setCartDialogOpen(open)
-        if (!open) {
-          setEditingExternalOrderId(null)
-        }
-      }}>
+      <Dialog open={cartDialogOpen} onOpenChange={setCartDialogOpen}>
         <DialogContent className="max-w-lg max-h-[80vh] flex flex-col overflow-hidden p-0 gap-0 rounded-2xl">
           <DialogHeader className="px-6 py-4 border-b border-gray-100 bg-white z-10">
             <DialogTitle className="flex items-center gap-2">
@@ -791,17 +731,6 @@ export function CheckInDrawer({
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            onClick={() => {
-                              setSelectedDrinkForDialog(order.drink)
-                              setEditingOrderId(order.id)
-                              setDialogOpen(true)
-                            }}
-                            className="px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                          >
-                            编辑
-                          </button>
-                          <button
-                            type="button"
                             onClick={() => handleDeleteOrder(order.id)}
                             className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                           >
@@ -873,11 +802,10 @@ export function CheckInDrawer({
       {mode === 'externalOrdersSeatAndOrder' && inlineOrderPanelOpen && (
         <div className="fixed inset-0 z-[100]">
           {/* 遮罩层 */}
-          <div 
+            <div 
             className="absolute inset-0 bg-black/20 backdrop-blur-sm z-0"
             onClick={() => {
               setInlineOrderPanelOpen(false)
-              setEditingExternalOrderId(null)
             }}
           />
           
@@ -893,7 +821,6 @@ export function CheckInDrawer({
                 type="button"
                 onClick={() => {
                   setInlineOrderPanelOpen(false)
-                  setEditingExternalOrderId(null)
                 }}
                 className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
