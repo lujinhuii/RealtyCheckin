@@ -25,11 +25,21 @@ export type Temperature = '常温' | '热饮' | '标准冰' | '少冰' | '去冰
 
 export type Sweetness = '无糖' | '少糖' | '标准糖';
 
+export type CheckInMode = 
+  | 'seatOnly' 
+  | 'orderAndSeat' 
+  | 'externalOrdersNoSeat' 
+  | 'externalOrdersSeat';
+
 export interface Drink {
   id: string;
   name: string;
   icon?: string; // 图标或 emoji
   price?: number; // 价格（可选）
+  category?: string; // 分类（如"咖啡系列"、"茶系列"）
+  tags?: string[]; // 标签数组（如["咖啡", "美式", "NEW"]）
+  description?: string; // 描述文字
+  image?: string; // 图片URL（可选）
 }
 
 export interface DrinkOrderItem {
@@ -38,6 +48,12 @@ export interface DrinkOrderItem {
   temperature: Temperature; // 温度
   sweetness: Sweetness; // 甜度
   quantity: number; // 数量
+}
+
+export interface ExternalOrder {
+  id: string; // 订单ID
+  items: DrinkOrderItem[]; // 订单中的饮品项
+  orderTime?: string; // 下单时间
 }
 
 export interface Seat {
@@ -64,6 +80,8 @@ export interface Customer {
   isProcessed?: boolean; // 是否已处理
   selectedDrink?: Drink; // 选择的饮品
   selectedSeat?: Seat; // 选择的座位
+  checkInMode?: CheckInMode; // 签到模式（演示用）
+  externalOrders?: ExternalOrder[]; // 外部平台订单（演示用）
 }
 
 export interface CustomerFormData {

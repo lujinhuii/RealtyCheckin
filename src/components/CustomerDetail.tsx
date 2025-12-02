@@ -3,10 +3,10 @@ import type { Customer, CustomerFormData, DrinkOrderItem, Seat } from "../types"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { Input } from "./ui/input"
 import { Button } from "./ui/button"
-import { useToast } from "./ui/use-toast"
 import { ChevronRight } from "lucide-react"
 import { cn } from "../lib/utils"
 import { CheckInDrawer } from "./CheckInDrawer"
+import { CheckInSuccessDialog } from "./CheckInSuccessDialog"
 
 interface CustomerDetailProps {
   customer: Customer | null
@@ -26,8 +26,9 @@ const defaultConsultant = {
 }
 
 export function CustomerDetail({ customer }: CustomerDetailProps) {
-  const { toast } = useToast()
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false)
+  const [confirmedSeatName, setConfirmedSeatName] = useState<string | undefined>(undefined)
   const [formData, setFormData] = useState<CustomerFormData>({
     name: customer?.name || "",
     gender: customer?.gender || "",
@@ -53,23 +54,15 @@ export function CustomerDetail({ customer }: CustomerDetailProps) {
     // 表单提交由"确认签到"按钮处理，这里只是阻止默认提交行为
   }
 
-  const handleCheckInComplete = (orders: DrinkOrderItem[], seat: Seat | null) => {
+  const handleCheckInComplete = (_orders: DrinkOrderItem[], seat: Seat | null) => {
     // 模拟保存客户信息和选择的饮品、座位
     setTimeout(() => {
-      let drinkText = ""
-      if (orders.length > 0) {
-        const drinkDetails = orders.map((order) => {
-          const details = `${order.drink.name}(${order.temperature}/${order.sweetness})`
-          return order.quantity > 1 ? `${details} × ${order.quantity}` : details
-        })
-        drinkText = `，已选择饮品：${drinkDetails.join("、")}`
-      }
-      const seatText = seat ? `，已选择座位：${seat.name}` : ""
-      toast({
-        title: "签到成功",
-        description: `客户信息已成功确认签到${drinkText}${seatText}`,
-      })
+      // 关闭抽屉
       setIsDrawerOpen(false)
+      
+      // 显示成功弹窗
+      setConfirmedSeatName(seat?.name)
+      setSuccessDialogOpen(true)
     }, 300)
   }
 
@@ -285,6 +278,13 @@ export function CustomerDetail({ customer }: CustomerDetailProps) {
         open={isDrawerOpen}
         onOpenChange={setIsDrawerOpen}
         onComplete={handleCheckInComplete}
+      />
+
+      {/* 签到成功弹窗 */}
+      <CheckInSuccessDialog
+        open={successDialogOpen}
+        onOpenChange={setSuccessDialogOpen}
+        seatName={confirmedSeatName}
       />
     </div>
   )

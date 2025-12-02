@@ -9,6 +9,7 @@ import {
 } from "./ui/dialog"
 import { Button } from "./ui/button"
 import { cn } from "../lib/utils"
+import { Minus, Plus } from "lucide-react"
 
 const TEMPERATURES: Temperature[] = ['常温', '热饮', '标准冰', '少冰', '去冰']
 const SWEETNESS_OPTIONS: Sweetness[] = ['无糖', '少糖', '标准糖']
@@ -64,30 +65,48 @@ export function DrinkSelectionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>选择 {drink.name}</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[425px] p-0 overflow-hidden rounded-2xl gap-0">
+        <div className="bg-gray-50/50 px-6 py-4 border-b border-gray-100">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-gray-900">选择规格</DialogTitle>
+          </DialogHeader>
+        </div>
 
-        <div className="space-y-6 py-4">
+        <div className="p-6 space-y-6">
           {/* 饮品信息 */}
-          <div className="flex items-center gap-3">
-            <div className="text-3xl">{drink.icon}</div>
-            <div className="flex-1">
-              <div className="text-base font-medium text-gray-900">
+          <div className="flex items-center gap-4">
+            {/* 饮品图片 */}
+            <div className="flex-shrink-0">
+              {drink.image ? (
+                <img
+                  src={drink.image}
+                  alt={drink.name}
+                  className="w-20 h-20 object-cover rounded-xl bg-gray-100 shadow-sm"
+                />
+              ) : (
+                <div className="w-20 h-20 bg-blue-50 rounded-xl flex items-center justify-center text-3xl">
+                  {drink.icon || "☕"}
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-bold text-gray-900 line-clamp-1">
                 {drink.name}
-              </div>
+              </h3>
               {drink.price && (
-                <div className="text-sm text-gray-500 mt-0.5">
+                <div className="text-base font-semibold text-blue-600 mt-1">
                   ¥{drink.price}
                 </div>
               )}
+              <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                {drink.tags?.join(" · ")}
+              </p>
             </div>
           </div>
 
           {/* 温度选择 */}
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-gray-900">温度</div>
+          <div className="space-y-3">
+            <div className="text-sm font-semibold text-gray-900">温度</div>
             <div className="grid grid-cols-5 gap-2">
               {TEMPERATURES.map((temp) => (
                 <button
@@ -95,10 +114,10 @@ export function DrinkSelectionDialog({
                   type="button"
                   onClick={() => setTemperature(temp)}
                   className={cn(
-                    "h-9 rounded border text-xs font-medium transition-colors",
+                    "h-8 rounded-lg text-xs font-medium transition-all border",
                     temperature === temp
-                      ? "bg-blue-50 border-blue-600 text-blue-600"
-                      : "bg-white border-gray-300 text-gray-700 hover:border-gray-400"
+                      ? "bg-blue-600 border-blue-600 text-white shadow-sm"
+                      : "bg-white border-gray-200 text-gray-600 hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50/50"
                   )}
                 >
                   {temp}
@@ -108,19 +127,19 @@ export function DrinkSelectionDialog({
           </div>
 
           {/* 甜度选择 */}
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-gray-900">甜度</div>
-            <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-3">
+            <div className="text-sm font-semibold text-gray-900">甜度</div>
+            <div className="grid grid-cols-3 gap-3">
               {SWEETNESS_OPTIONS.map((sweet) => (
                 <button
                   key={sweet}
                   type="button"
                   onClick={() => setSweetness(sweet)}
                   className={cn(
-                    "h-9 rounded border text-xs font-medium transition-colors",
+                    "h-8 rounded-lg text-xs font-medium transition-all border",
                     sweetness === sweet
-                      ? "bg-blue-50 border-blue-600 text-blue-600"
-                      : "bg-white border-gray-300 text-gray-700 hover:border-gray-400"
+                      ? "bg-blue-600 border-blue-600 text-white shadow-sm"
+                      : "bg-white border-gray-200 text-gray-600 hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50/50"
                   )}
                 >
                   {sweet}
@@ -130,79 +149,47 @@ export function DrinkSelectionDialog({
           </div>
 
           {/* 数量选择 */}
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-gray-900">数量</div>
-            <div className="flex items-center gap-3">
+          <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
+            <div className="text-sm font-semibold text-gray-900">购买数量</div>
+            <div className="flex items-center bg-gray-50 rounded-lg p-1 border border-gray-200">
               <button
                 type="button"
                 onClick={handleDecrease}
                 disabled={quantity <= 1}
-                className={cn(
-                  "h-9 w-9 rounded border border-gray-300 flex items-center justify-center text-gray-700 transition-colors",
-                  quantity <= 1
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:border-gray-400 hover:bg-gray-50"
-                )}
+                className="w-8 h-8 flex items-center justify-center rounded-md text-gray-600 hover:bg-white hover:shadow-sm disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:shadow-none transition-all"
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M20 12H4"
-                  />
-                </svg>
+                <Minus className="w-4 h-4" />
               </button>
-              <div className="flex-1 text-center">
-                <span className="text-lg font-medium text-gray-900">
-                  {quantity}
-                </span>
-              </div>
+              <span className="w-10 text-center text-sm font-semibold text-gray-900">
+                {quantity}
+              </span>
               <button
                 type="button"
                 onClick={handleIncrease}
-                className="h-9 w-9 rounded border border-gray-300 flex items-center justify-center text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-50"
+                className="w-8 h-8 flex items-center justify-center rounded-md text-gray-600 hover:bg-white hover:shadow-sm transition-all"
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
+                <Plus className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="bg-gray-50/50 px-6 py-4 border-t border-gray-100">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="h-9"
+            className="h-10 rounded-lg border-gray-200 hover:bg-white hover:text-gray-900"
           >
             取消
           </Button>
           <Button
             onClick={handleConfirm}
-            className="bg-blue-600 hover:bg-blue-700 text-white h-9"
+            className="bg-blue-600 hover:bg-blue-700 text-white h-10 rounded-lg px-8 shadow-sm hover:shadow transition-all"
           >
-            确认
+            确认添加
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
-

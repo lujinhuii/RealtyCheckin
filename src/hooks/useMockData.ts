@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Customer, CheckInStatus, Gender } from '../types';
+import type { Customer, CheckInStatus, Gender, CheckInMode, Drink, Temperature, Sweetness, ExternalOrder } from '../types';
 
 // 中文姓名列表
 const firstNames = ['张', '李', '王', '刘', '陈', '杨', '赵', '黄', '周', '吴', '徐', '孙', '胡', '朱', '高', '林', '何', '郭', '马', '罗'];
@@ -134,11 +134,104 @@ function generateCustomer(): Customer {
   };
 }
 
+// 格式化时间为 "MM月DD日 HH:mm" 格式
+function formatOrderTime(timestamp: number): string {
+  const date = new Date(timestamp);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${month}月${day}日 ${hours}:${minutes}`;
+}
+
+// 创建示例外部订单（用于演示）
+// 注意：这里使用简化的饮品数据，实际显示时会从 CheckInDrawer 的 DRINKS 数组中获取完整信息（包括图片）
+function createSampleExternalOrders(): ExternalOrder[] {
+  // 使用饮品的ID，实际显示时会通过ID匹配获取完整信息
+  const sampleDrinkIds = ["1", "2", "6", "3", "4"]; // 美式咖啡、拿铁、鲜榨橙汁、卡布奇诺、龙井茶
+  
+  const timestamp = Date.now();
+  const orderTime1 = formatOrderTime(timestamp - 3600000); // 1小时前
+  const orderTime2 = formatOrderTime(timestamp - 7200000); // 2小时前
+  
+  return [
+    {
+      id: `order-${timestamp}-1`,
+      orderTime: orderTime1,
+      items: [
+        {
+          id: `item-${timestamp}-1-1`,
+          drink: { id: sampleDrinkIds[0], name: "美式咖啡", icon: "☕", price: 25 } as Drink,
+          temperature: '热饮' as Temperature,
+          sweetness: '标准糖' as Sweetness,
+          quantity: 2,
+        },
+        {
+          id: `item-${timestamp}-1-2`,
+          drink: { id: sampleDrinkIds[1], name: "拿铁", icon: "☕", price: 30 } as Drink,
+          temperature: '标准冰' as Temperature,
+          sweetness: '少糖' as Sweetness,
+          quantity: 1,
+        },
+      ],
+    },
+    {
+      id: `order-${timestamp}-2`,
+      orderTime: orderTime2,
+      items: [
+        {
+          id: `item-${timestamp}-2-1`,
+          drink: { id: sampleDrinkIds[2], name: "鲜榨橙汁", icon: "🍹", price: 25 } as Drink,
+          temperature: '常温' as Temperature,
+          sweetness: '无糖' as Sweetness,
+          quantity: 1,
+        },
+        {
+          id: `item-${timestamp}-2-2`,
+          drink: { id: sampleDrinkIds[3], name: "卡布奇诺", icon: "☕", price: 32 } as Drink,
+          temperature: '热饮' as Temperature,
+          sweetness: '标准糖' as Sweetness,
+          quantity: 2,
+        },
+        {
+          id: `item-${timestamp}-2-3`,
+          drink: { id: sampleDrinkIds[4], name: "龙井茶", icon: "🍵", price: 28 } as Drink,
+          temperature: '标准冰' as Temperature,
+          sweetness: '少糖' as Sweetness,
+          quantity: 1,
+        },
+      ],
+    },
+  ];
+}
+
 export function useMockData(count: number = 15): Customer[] {
   const [customers, setCustomers] = useState<Customer[]>([]);
 
   useEffect(() => {
     const generatedCustomers = Array.from({ length: count }, () => generateCustomer());
+    
+    // 为前4个客户设置演示模式
+    if (generatedCustomers.length >= 4) {
+      // 第1个客户：仅分配座位
+      generatedCustomers[0].checkInMode = 'seatOnly' as CheckInMode;
+      generatedCustomers[0].name = '仅分配座位';
+      
+      // 第2个客户：点单 + 分配座位（默认，无需设置）
+      generatedCustomers[1].checkInMode = 'orderAndSeat' as CheckInMode;
+      generatedCustomers[1].name = '点单+座位';
+      
+      // 第3个客户：外部点单，仅可删除，不可修改，不支持分配座位
+      generatedCustomers[2].checkInMode = 'externalOrdersNoSeat' as CheckInMode;
+      generatedCustomers[2].externalOrders = createSampleExternalOrders();
+      generatedCustomers[2].name = '外部订单无座位';
+      
+      // 第4个客户：外部点单，仅可删除，不可修改，支持分配座位
+      generatedCustomers[3].checkInMode = 'externalOrdersSeat' as CheckInMode;
+      generatedCustomers[3].externalOrders = createSampleExternalOrders();
+      generatedCustomers[3].name = '外部订单+座位';
+    }
+    
     setCustomers(generatedCustomers);
   }, [count]);
 
