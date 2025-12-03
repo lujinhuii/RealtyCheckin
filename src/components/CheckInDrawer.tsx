@@ -294,7 +294,11 @@ export function CheckInDrawer({
               <Badge variant="outline" className="rounded-md bg-blue-50 text-blue-700 border-blue-100 px-2 py-0.5">
                 签到
               </Badge>
-              {customer ? `为 ${customer.name} 确认签到` : "确认签到"}
+              {customer 
+                ? (mode === 'seatOnly' 
+                    ? `为 ${customer.name} 分配座位` 
+                    : `为 ${customer.name} 点单`)
+                : (mode === 'seatOnly' ? "分配座位" : "点单")}
             </DrawerTitle>
           </DrawerHeader>
 
@@ -631,7 +635,7 @@ export function CheckInDrawer({
                   onClick={handleComplete}
                   className="h-10 px-8 font-medium shadow-md transition-all bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5"
                 >
-                  确认签到
+                  确认
                 </Button>
               </div>
             </div>
